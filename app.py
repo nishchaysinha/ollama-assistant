@@ -10,6 +10,9 @@ import requests
 app = Flask(__name__)
 AUDIO_FOLDER = 'audio'  # Folder to save audio files
 
+response_audio_mp3_path = os.path.join(AUDIO_FOLDER, 'response.mp3')
+response_audio_wav_path = os.path.join(AUDIO_FOLDER, 'response.wav')
+
 # Ensure the audio folder exists
 os.makedirs(AUDIO_FOLDER, exist_ok=True)
 
@@ -87,6 +90,11 @@ def voice_api():
 
     except Exception as e:
         return jsonify({'error': 'Ollama API request failed', 'details': str(e)}), 500
+
+    if os.path.exists(response_audio_mp3_path):
+        os.remove(response_audio_mp3_path)
+    if os.path.exists(response_audio_wav_path):
+        os.remove(response_audio_wav_path)
 
     # Generate a TTS response from the Ollama response
     response_audio_mp3_path = os.path.join(AUDIO_FOLDER, f'response.mp3')
