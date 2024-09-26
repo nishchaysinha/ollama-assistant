@@ -25,7 +25,7 @@ RUN apt-get update && apt-get install -y ffmpeg flac && apt-get clean
 EXPOSE 5000
 
 # Define a volume for persistent data (access files from host)
-VOLUME ["/app/data"]
+VOLUME ["/app/audio"]
 
 # Run the Flask app when the container launches
 CMD ["python", "app.py"]
