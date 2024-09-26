@@ -28,7 +28,7 @@ def text_to_speech(text, filename):
 def index():
     return render_template('index.html')  # Render the HTML template
 
-OLLAMA_API_URL = "http://localhost:11434/api/generate"  # Ollama API URL
+OLLAMA_API_URL = "http://host.docker.internal:11434/api/generate"  # Ollama API URL
 
 @app.route('/api/voice', methods=['POST'])
 def voice_api():
@@ -55,7 +55,7 @@ def voice_api():
     # Call Ollama API with the recognized text as the prompt
     try:
         ollama_response = requests.post(OLLAMA_API_URL, json={
-            "model": "llama3",
+            "model": "llama3.1",
             "prompt": f"Answer this question as briefly as possible and do not exceed 80-100 words while answering this question. Also remember some basic details while answering: VIT stands for Vellore Institute of Technology, the chancellor of VIT is Dr. G Vishwanathan also remember the prompt you receive is speech to text so adjust some mispelled words if necessarry: {text}",
             "stream": False
         })
