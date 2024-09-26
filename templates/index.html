@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Voice Input App</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            text-align: center;
+        }
+        button {
+            padding: 10px 15px;
+            font-size: 16px;
+            margin: 5px;
+        }
+        audio {
+            margin-top: 20px;
+        }
+        #status {
+            color: red;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Voice Input to Ollama API</h1>
+    <button id="start-record-btn">Start Recording</button>
+    <button id="stop-record-btn" disabled>Stop Recording</button>
+    <h2>Response:</h2>
+    <audio id="response-audio" controls></audio>
+    <div id="status"></div>
+    
+    <script>
+        let mediaRecorder;
+        let audioChunks = [];
+
+        document.getElementById('start-record-btn').onclick = async () => {
+            audioChunks = [];
+            document.getElementById('status').innerText = '';  // Clear previous status
+
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                mediaRecorder = new MediaRecorder(stream);
+
+                mediaRecorder.ondataavailable = event => {
+                    audioChunks.push(event.data);
+                };
+
+                mediaRecorder.onstop = async () => {
+                    const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+                    const arrayBuffer = await audioBlob.arrayBuffer();
+                    const wavBlob = await convertToWav(arrayBuffer);
+
+                    const formData = new FormData();
+                    formData.append('audio', wavBlob, 'recording.wav');
+
+                    try {
+                        document.getElementById('status').innerText = 'Processing...';
+                        const response = await fetch('/api/voice', {
+                            method: 'POST',
+                            body: formData
+                        });
+                        
+                        if (!response.ok) {
+                            throw new Error('Failed to process audio');
+                        }
+
+                        const responseData = await response.json();
+                        if (responseData.error) {
+                            document.getElementById('status').innerText = `Error: ${responseData.error}`;
+                        } else {
+                            document.getElementById('response-audio').src = '/audio/' + responseData.audio_path;
+                            document.getElementById('response-audio').play();
+                            document.getElementById('status').innerText = 'Success!';
+                        }
+                    } catch (error) {
+                        document.getElementById('status').innerText = `Error: ${error.message}`;
+                    }
+                };
+
+                mediaRecorder.start();
+                document.getElementById('start-record-btn').disabled = true;
+                document.getElementById('stop-record-btn').disabled = false;
+            } catch (error) {
+                document.getElementById('status').innerText = `Error: Unable to access microphone. ${error.message}`;
+            }
+        };
+
+        document.getElementById('stop-record-btn').onclick = () => {
+            mediaRecorder.stop();
+            document.getElementById('start-record-btn').disabled = false;
+            document.getElementById('stop-record-btn').disabled = true;
+        };
+
+        async function convertToWav(arrayBuffer) {
+            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+            const wavData = audioBufferToWav(audioBuffer);
+            const wavBlob = new Blob([new Uint8Array(wavData)], { type: 'audio/wav' });
+            return wavBlob;
+        }
+
+        function audioBufferToWav(buffer) {
+            const numOfChannels = buffer.numberOfChannels;
+            const length = buffer.length * numOfChannels * 2 + 44;
+            const bufferView = new Uint8Array(length);
+            const wavView = new DataView(bufferView.buffer);
+
+            // Write WAV header
+            writeString(wavView, 0, 'RIFF');
+            wavView.setUint32(4, length - 8, true);
+            writeString(wavView, 8, 'WAVE');
+            writeString(wavView, 12, 'fmt ');
+            wavView.setUint32(16, 16, true);
+            wavView.setUint16(20, 1, true);
+            wavView.setUint16(22, numOfChannels, true);
+            wavView.setUint32(24, 44100, true);
+            wavView.setUint32(28, 44100 * 2, true);
+            wavView.setUint16(32, 2, true);
+            wavView.setUint16(34, 16, true);
+            writeString(wavView, 36, 'data');
+            wavView.setUint32(40, length - 44, true);
+
+            // Write PCM samples
+            let offset = 44;
+            for (let i = 0; i < buffer.length; i++) {
+                for (let channel = 0; channel < numOfChannels; channel++) {
+                    const sample = Math.max(-1, Math.min(1, buffer.getChannelData(channel)[i]));
+                    wavView.setInt16(offset, sample < 0 ? sample * 0x8000 : sample * 0x7FFF, true);
+                    offset += 2;
+                }
+            }
+
+            return bufferView;
+        }
+
+        function writeString(view, offset, string) {
+            for (let i = 0; i < string.length; i++) {
+                view.setUint8(offset + i, string.charCodeAt(i));
+            }
+        }
+    </script>
+</body>
+</html>
