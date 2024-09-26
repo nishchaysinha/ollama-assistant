@@ -89,7 +89,7 @@ def voice_api():
         return jsonify({'error': 'Ollama API request failed', 'details': str(e)}), 500
 
     # Generate a TTS response from the Ollama response
-    response_audio_mp3_path = os.path.join(AUDIO_FOLDER, f'response_{uuid.uuid4()}.mp3')
+    response_audio_mp3_path = os.path.join(AUDIO_FOLDER, f'response.mp3')
     response_audio_wav_path = text_to_speech(ollama_text_response, response_audio_mp3_path)
 
     # Clean up the temporary file
