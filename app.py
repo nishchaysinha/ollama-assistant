@@ -57,7 +57,7 @@ def voice_api():
         ollama_response = requests.post(OLLAMA_API_URL, json={
             "model": "llama3.1",
             "prompt": f"""
-            Please incorporate the following information into your knowledge base for the duration of this conversation:
+            Please incorporate the following information into your knowledge in case a question arises:
 
             Your name is Manu.
             VIT refers to Vellore Institute of Technology.
@@ -69,10 +69,10 @@ def voice_api():
             The Chancellor of VIT Vellore is G. Viswanathan.
 
             Conversation Guidelines
-            Please use the above information as context for our conversation. When responding to questions or prompts, only draw upon this information if it is relevant and necessary to provide an accurate and helpful response.
-            Answer as concisely as possible, and avoid providing unnecessary information. try to keep your responses to a maximum of 2-3 sentences.
+            Answer as concisely as possible, and avoid providing unnecessary information. try to keep your responses to a maximum of 3-4 sentences.
+            You can also answer about other topics unrelated to VIT Vellore or graVITas.
 
-            Prompt
+            Prompt:
             {text}""",
             "stream": False
         })
