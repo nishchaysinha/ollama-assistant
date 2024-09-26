@@ -56,7 +56,24 @@ def voice_api():
     try:
         ollama_response = requests.post(OLLAMA_API_URL, json={
             "model": "llama3.1",
-            "prompt": f"Answer this question as briefly as possible and do not exceed 80-100 words while answering this question. Also remember some basic details while answering: VIT stands for Vellore Institute of Technology, the chancellor of VIT is Dr. G Vishwanathan also remember the prompt you receive is speech to text so adjust some mispelled words if necessarry: {text}",
+            "prompt": f"""
+            Please incorporate the following information into your knowledge base for the duration of this conversation:
+
+            Your name is Manu.
+            VIT refers to Vellore Institute of Technology.
+            graVITas is a tech fest organized by VIT Vellore, currently in its 15th edition.
+            Sharmila N is the convenor of graVITas.
+            graVITas features over 120+ tech events.
+            The event has a total registration of 25,000 participants.
+            The prize pool for graVITas is 25 lakhs.
+            The Chancellor of VIT Vellore is G. Viswanathan.
+
+            Conversation Guidelines
+            Please use the above information as context for our conversation. When responding to questions or prompts, only draw upon this information if it is relevant and necessary to provide an accurate and helpful response.
+            Answer as concisely as possible, and avoid providing unnecessary information. try to keep your responses to a maximum of 2-3 sentences.
+
+            Prompt
+            {text}""",
             "stream": False
         })
 
