@@ -3,3 +3,4 @@ gTTS
 pydub
 SpeechRecognition
 requests
+elevenlabs

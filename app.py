@@ -6,15 +6,50 @@ import speech_recognition as sr
 from gtts import gTTS
 from pydub import AudioSegment
 import requests
+from elevenlabs import ElevenLabs, VoiceSettings
+
 
 app = Flask(__name__)
 AUDIO_FOLDER = 'audio'  # Folder to save audio files
 
-response_audio_mp3_path = os.path.join(AUDIO_FOLDER, 'response.mp3')
-response_audio_wav_path = os.path.join(AUDIO_FOLDER, 'response.wav')
+
 
 # Ensure the audio folder exists
 os.makedirs(AUDIO_FOLDER, exist_ok=True)
+
+
+def text_to_speech_elevenlabs(text, filename):
+    # Initialize ElevenLabs client
+    client = ElevenLabs(
+        api_key="sk_ffddba18933e8bf66ddcda2c55279becbe6c491c3681f8a9",
+    )
+    
+    # Convert text to speech and get the response as a generator (streamed response)
+    response_generator = client.text_to_speech.convert(
+        voice_id="flq6f7yk4E4fJM5XTYuZ",
+        optimize_streaming_latency="0",
+        output_format="mp3_22050_32",
+        text=text,
+        voice_settings=VoiceSettings(
+            stability=0.1,
+            similarity_boost=0.3,
+            style=0.2,
+        ),
+    )
+    
+    # Write the streamed response to an MP3 file
+    with open(filename, 'wb') as f:
+        for chunk in response_generator:
+            f.write(chunk)
+    
+    # Convert MP3 to WAV
+    sound = AudioSegment.from_mp3(filename)
+    wav_filename = filename.replace('.mp3', '.wav')
+    sound.export(wav_filename, format="wav")
+    
+    return wav_filename
+
+
 
 def text_to_speech(text, filename):
     """Convert text to speech and save the audio file."""
@@ -41,7 +76,7 @@ def voice_api():
     audio_file = request.files['audio']
 
     # Save the uploaded audio file temporarily
-    temp_file_path = os.path.join(AUDIO_FOLDER, f'temp_{uuid.uuid4()}.wav')
+    temp_file_path = os.path.join(AUDIO_FOLDER, f'temp.wav')
     audio_file.save(temp_file_path)
 
     # Use SpeechRecognition to recognize the speech
@@ -91,14 +126,18 @@ def voice_api():
     except Exception as e:
         return jsonify({'error': 'Ollama API request failed', 'details': str(e)}), 500
 
-    if os.path.exists(response_audio_mp3_path):
-        os.remove(response_audio_mp3_path)
-    if os.path.exists(response_audio_wav_path):
-        os.remove(response_audio_wav_path)
+    # Clean up the temporary audio file if it exists
+    if os.path.isfile("audio/response.mp3"):
+        print("Removing response.mp3")
+        os.remove("audio/response.mp3")
+    if os.path.isfile("audio/response.wav"):
+        print("Removing response.wav")
+        os.remove("audio/response.wav")
 
     # Generate a TTS response from the Ollama response
     response_audio_mp3_path = os.path.join(AUDIO_FOLDER, f'response.mp3')
-    response_audio_wav_path = text_to_speech(ollama_text_response, response_audio_mp3_path)
+    response_audio_wav_path = text_to_speech_elevenlabs(ollama_text_response, response_audio_mp3_path)
+    
 
     # Clean up the temporary file
     os.remove(temp_file_path)
@@ -119,5 +158,5 @@ def get_audio(filename):
 
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    app.run(host='0.0.0.0', port=8000, debug=True)
 
