@@ -21,7 +21,8 @@ os.makedirs(AUDIO_FOLDER, exist_ok=True)
 def text_to_speech_elevenlabs(text, filename):
     # Initialize ElevenLabs client
     client = ElevenLabs(
-        api_key="sk_ffddba18933e8bf66ddcda2c55279becbe6c491c3681f8a9",
+        api_key="sk_ffddba18933e8bf66ddcda2c55279becbe6c491c3681f8a9", #FOR CONTEXT I DO NOT OWN THIS API KEY,
+        #I DO NOT LIKE THE PEOPLE WHO GAVE ME THIS API KEY
     )
     
     # Convert text to speech and get the response as a generator (streamed response)
